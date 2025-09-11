@@ -1,1 +1,1 @@
-# dashboard-2.0
+# Dashboard
