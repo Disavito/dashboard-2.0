@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import TransactionForm from '@/components/custom/TransactionForm';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom'; // Import Link
 
 interface AccountWithBalance extends Cuenta {
   balance: number;
@@ -165,8 +166,7 @@ const Accounts: React.FC = () => {
         {accounts.map((account) => (
           <Card key={account.id} className="bg-surface border-border rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xl font-semibold text-white">{account.name}</CardTitle>
-              <span className="text-sm text-textSecondary bg-background px-3 py-1 rounded-full">Financiera</span>
+              <CardTitle className="text-xl font-semibold text-primary">{account.name}</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <div className={`text-3xl font-extrabold mb-2 ${account.balance >= 0 ? 'text-success' : 'text-error'}`}>
@@ -174,8 +174,9 @@ const Accounts: React.FC = () => {
               </div>
               <p className="text-textSecondary text-sm">Saldo actual</p>
               <div className="mt-4 flex justify-end space-x-2">
-                <Button variant="ghost" className="text-textSecondary hover:text-white hover:bg-background rounded-lg">Ver Detalles</Button>
-                {/* <Button variant="ghost" className="text-accent hover:text-white hover:bg-background rounded-lg">Editar</Button> */}
+                <Link to={`/accounts/${account.id}`}> {/* Use Link for navigation */}
+                  <Button variant="ghost" className="text-textSecondary hover:text-white hover:bg-background rounded-lg">Ver Detalles</Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'; // Removed 'BrowserRouter as Router'
+import { Routes, Route } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import People from './pages/People';
@@ -7,6 +7,7 @@ import Expenses from './pages/Expenses';
 import Income from './pages/Income';
 import Settings from './pages/Settings';
 import AuthPage from './pages/Auth';
+import AccountDetails from './pages/AccountDetails'; // Import the new AccountDetails page
 import { useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -45,6 +46,7 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="people" element={<People />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="accounts/:id" element={<AccountDetails />} /> {/* New route for account details */}
         <Route path="expenses" element={<Expenses />} />
         <Route path="income" element={<Income />} />
         <Route path="settings" element={<Settings />} />
