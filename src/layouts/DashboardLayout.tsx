@@ -13,6 +13,8 @@ import {
   UserCheck,
   Settings as SettingsIcon,
   Loader2,
+  FileText, // Added for Documents
+  Users, // Added for Collaborators
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui-custom/ThemeToggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +29,8 @@ const navItems = [
   { name: 'Ingresos', path: '/income', icon: ArrowUpCircle, roles: ['admin'] },
   { name: 'Gastos', path: '/expenses', icon: ArrowDownCircle, roles: ['admin'] },
   { name: 'Titulares', path: '/people', icon: UserCheck, roles: ['admin', 'engineer'] },
+  { name: 'Colaboradores', path: '/collaborators', icon: Users, roles: ['admin'] }, // Added Collaborators
+  { name: 'Documentos', path: '/documents', icon: FileText, roles: ['admin'] }, // Added Documents
   { name: 'Cuentas', path: '/accounts', icon: Wallet, roles: ['admin'] },
   { name: 'Configuración', path: '/settings', icon: SettingsIcon, roles: ['admin'] },
 ];

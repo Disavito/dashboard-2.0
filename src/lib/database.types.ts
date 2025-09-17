@@ -107,7 +107,7 @@ export interface Database {
       }
       socio_titulares: {
         Row: {
-          id: number
+          id: string // Changed to string (UUID)
           created_at: string
           dni: string
           nombres: string
@@ -130,7 +130,7 @@ export interface Database {
           lote: string | null
         }
         Insert: {
-          id?: number
+          id?: string
           created_at?: string
           dni: string
           nombres: string
@@ -153,7 +153,7 @@ export interface Database {
           lote?: string | null
         }
         Update: {
-          id?: number
+          id?: string
           created_at?: string
           dni?: string
           nombres?: string
@@ -229,6 +229,47 @@ export interface Database {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      socio_documentos: {
+        Row: {
+          id: string // UUID
+          socio_id: string // UUID, references socio_titulares
+          tipo_documento: 'Ficha' | 'Contrato' | 'Declaración jurada del terreno' | 'Declaración jurada de la prohibición venta 10 años' | 'Memoria descriptiva' | 'Planos de ubicación' | 'Plano perimétrico'
+          link_documento: string | null
+          subido_manual: boolean | null
+          impreso: boolean | null
+          confirmado: boolean | null
+          created_at: string // Added for consistency
+        }
+        Insert: {
+          id?: string
+          socio_id: string
+          tipo_documento: 'Ficha' | 'Contrato' | 'Declaración jurada del terreno' | 'Declaración jurada de la prohibición venta 10 años' | 'Memoria descriptiva' | 'Planos de ubicación' | 'Plano perimétrico'
+          link_documento?: string | null
+          subido_manual?: boolean | null
+          impreso?: boolean | null
+          confirmado?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          socio_id?: string
+          tipo_documento?: 'Ficha' | 'Contrato' | 'Declaración jurada del terreno' | 'Declaración jurada de la prohibición venta 10 años' | 'Memoria descriptiva' | 'Planos de ubicación' | 'Plano perimétrico'
+          link_documento?: string | null
+          subido_manual?: boolean | null
+          impreso?: boolean | null
+          confirmado?: boolean | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "socio_documentos_socio_id_fkey"
+            columns: ["socio_id"]
+            isOneToOne: false
+            referencedRelation: "socio_titulares"
             referencedColumns: ["id"]
           }
         ]

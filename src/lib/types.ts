@@ -6,6 +6,21 @@ export type Gasto = Tables<'gastos'>;
 export type Colaborador = Tables<'colaboradores'>;
 
 export type SocioTitular = Tables<'socio_titulares'>;
+export type SocioDocumento = Tables<'socio_documentos'>; // New type for documents
+
+// Define the union type for document types directly from the database schema
+export type DocumentType = SocioDocumento['tipo_documento'];
+
+// Extend SocioTitular for UI purposes to include derived fields
+export interface SocioTitularWithReceipt extends SocioTitular {
+  latestReceiptNumber?: string | null;
+}
+
+// Extend SocioTitularWithReceipt to include documents and missing document types
+export interface SocioTitularWithDocuments extends SocioTitularWithReceipt {
+  documents: SocioDocumento[];
+  missingDocumentTypes: DocumentType[];
+}
 
 export type EconomicSituationOption = {
   value: 'Pobre' | 'Extremo Pobre';

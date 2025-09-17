@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
-import { SocioTitular } from '@/lib/types';
+import { SocioTitularWithReceipt } from '@/lib/types'; // Updated import: only SocioTitularWithReceipt
 import SocioTitularRegistrationForm from '@/components/custom/SocioTitularRegistrationForm';
 import ConfirmationDialog from '@/components/ui-custom/ConfirmationDialog';
 import { DataTable } from '@/components/ui-custom/DataTable';
@@ -34,15 +34,16 @@ import {
   CommandItem,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge'; // Added Badge import
 
 
 function People() {
-  const [socios, setSocios] = useState<SocioTitular[]>([]);
+  const [socios, setSocios] = useState<SocioTitularWithReceipt[]>([]); // Use SocioTitularWithReceipt
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRegistrationDialogOpen, setIsRegistrationDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [socioToDelete, setSocioToDelete] = useState<SocioTitular | null>(null);
+  const [socioToDelete, setSocioToDelete] = useState<SocioTitularWithReceipt | null>(null); // Use SocioTitularWithReceipt
   const [isDeleting, setIsDeleting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -53,28 +54,63 @@ function People() {
 
   // State for editing socio in a dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [socioToEdit, setSocioToEdit] = useState<SocioTitular | null>(null);
+  const [socioToEdit, setSocioToEdit] = useState<SocioTitularWithReceipt | null>(null); // Use SocioTitularWithReceipt
 
   // State for data displayed in the table, pre-filtered by locality
-  const [displaySocios, setDisplaySocios] = useState<SocioTitular[]>([]);
+  const [displaySocios, setDisplaySocios] = useState<SocioTitularWithReceipt[]>([]); // Use SocioTitularWithReceipt
 
 
   const fetchSocios = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    setError(null);
+
+    // 1. Fetch socio_titulares
+    const { data: sociosData, error: sociosError } = await supabase
       .from('socio_titulares')
       .select('*')
       .order('apellidoPaterno', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching socios:', error.message);
+    if (sociosError) {
+      console.error('Error fetching socios:', sociosError.message);
       setError('Error al cargar los socios. Por favor, inténtalo de nuevo.');
       setSocios([]);
-      toast.error('Error al cargar socios', { description: error.message });
-    } else {
-      setSocios(data || []);
-      setError(null);
+      toast.error('Error al cargar socios', { description: sociosError.message });
+      setLoading(false);
+      return;
     }
+
+    // 2. Fetch ingresos to get receipt numbers
+    const { data: ingresosData, error: ingresosError } = await supabase
+      .from('ingresos')
+      .select('dni, receipt_number, created_at')
+      .not('receipt_number', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (ingresosError) {
+      console.error('Error fetching ingresos for receipts:', ingresosError.message);
+      toast.warning('No se pudieron cargar los números de recibo de ingreso.', { description: ingresosError.message });
+    }
+
+    // 3. Create a map of DNI to latest receipt number
+    const dniToLatestReceiptMap = new Map<string, string>();
+    if (ingresosData) {
+      for (const ingreso of ingresosData) {
+        if (ingreso.dni && ingreso.receipt_number && !dniToLatestReceiptMap.has(ingreso.dni)) {
+          dniToLatestReceiptMap.set(ingreso.dni, ingreso.receipt_number);
+        }
+      }
+    }
+
+    // 4. Merge data into SocioTitularWithReceipt
+    const sociosWithReceiptData: SocioTitularWithReceipt[] = sociosData.map(socio => {
+      return {
+        ...socio,
+        latestReceiptNumber: socio.dni ? dniToLatestReceiptMap.get(socio.dni) || null : null,
+      };
+    });
+
+    setSocios(sociosWithReceiptData);
+    setError(null);
     setLoading(false);
   }, []);
 
@@ -140,8 +176,9 @@ function People() {
     setIsDeleting(false);
   };
 
-  const columns: ColumnDef<SocioTitular>[] = useMemo(
+  const columns: ColumnDef<SocioTitularWithReceipt>[] = useMemo( // Use SocioTitularWithReceipt here
     () => [
+      // Removed expander column as document display is now in a separate section
       {
         accessorKey: 'dni',
         header: ({ column }) => (
@@ -155,6 +192,27 @@ function People() {
           </Button>
         ),
         cell: ({ row }) => <div className="font-medium">{row.getValue('dni')}</div>,
+      },
+      {
+        accessorKey: 'latestReceiptNumber', // New column for receipt number
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="text-text hover:text-primary"
+          >
+            N° Recibo
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className={cn(
+            "font-medium",
+            !row.original.latestReceiptNumber && "text-textSecondary italic"
+          )}>
+            {row.original.latestReceiptNumber || 'No generado'}
+          </div>
+        ),
       },
       {
         accessorKey: 'nombres',
@@ -208,6 +266,7 @@ function People() {
         header: 'Localidad',
         cell: ({ row }) => <div>{row.getValue('localidad') || 'N/A'}</div>,
       },
+      // Removed document_status column
       {
         id: 'actions',
         enableHiding: false,
@@ -246,7 +305,7 @@ function People() {
   );
 
   // Custom global filter function for DataTable (now only handles text search)
-  const customGlobalFilterFn = useCallback((row: Row<SocioTitular>, _columnId: string, filterValue: any) => {
+  const customGlobalFilterFn = useCallback((row: Row<SocioTitularWithReceipt>, _columnId: string, filterValue: any) => { // Use SocioTitularWithReceipt
     const search = String(filterValue).toLowerCase();
     const socio = row.original;
 
@@ -256,6 +315,7 @@ function People() {
     const apellidoMaterno = socio.apellidoMaterno?.toLowerCase() || '';
     const celular = socio.celular?.toLowerCase() || '';
     const localidad = socio.localidad?.toLowerCase() || ''; // Keep locality in search for global text search
+    const latestReceiptNumber = socio.latestReceiptNumber?.toLowerCase() || ''; // Include new field in search
 
     return (
       dni.includes(search) ||
@@ -263,7 +323,8 @@ function People() {
       apellidoPaterno.includes(search) ||
       apellidoMaterno.includes(search) ||
       celular.includes(search) ||
-      localidad.includes(search)
+      localidad.includes(search) ||
+      latestReceiptNumber.includes(search) // Add to search
     );
   }, []); // No dependency on selectedLocalidadFilter anymore, as it's handled upstream
 
@@ -307,7 +368,7 @@ function People() {
           <div className="relative flex items-center w-full max-w-md">
             <Search className="absolute left-3 h-5 w-5 text-textSecondary" />
             <Input
-              placeholder="Buscar por DNI, nombre, apellido o celular..."
+              placeholder="Buscar por DNI, nombre, apellido, celular o recibo..."
               value={globalFilter ?? ''}
               onChange={(event) => setGlobalFilter(event.target.value)}
               className="pl-10 pr-4 py-2 rounded-lg border-border bg-background text-foreground focus:ring-primary focus:border-primary transition-all duration-300 w-full"
@@ -393,11 +454,12 @@ function People() {
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
           customGlobalFilterFn={customGlobalFilterFn} // This now only handles text search
+          // Removed renderSubComponent as document display is now in a separate section
         />
       </div>
 
       {/* Dialog for Editing Socio */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}> {/* Corrected prop name here */}
         <DialogContent className="sm:max-w-[800px] bg-card text-text border-border rounded-xl shadow-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-primary">Editar Socio Titular</DialogTitle>

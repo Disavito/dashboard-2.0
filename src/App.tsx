@@ -1,57 +1,107 @@
 import { Routes, Route } from 'react-router-dom';
-import DashboardLayout from './layouts/DashboardLayout';
-import Dashboard from './pages/Dashboard';
-import People from './pages/People';
+import Auth from './pages/Auth';
+import Home from './pages/Home';
 import Accounts from './pages/Accounts';
-import Expenses from './pages/Expenses';
-import Income from './pages/Income';
-import Settings from './pages/Settings';
-import AuthPage from './pages/Auth';
-import AccountDetails from './pages/AccountDetails'; // Import the new AccountDetails page
-import { useEffect } from 'react';
-import { supabase } from './lib/supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import Transactions from './pages/Transactions';
+import People from './pages/People';
+import Collaborators from './pages/Collaborators';
+import Documents from './pages/Documents';
+import Income from './pages/Income'; // Import the Income page
+import Expenses from './pages/Expenses'; // Import the Expenses page
+import ProtectedRoute from './components/ui-custom/ProtectedRoute';
+import { Toaster } from './components/ui/sonner';
+import { useUser } from './context/UserContext';
+import Sidebar from './components/ui-custom/Sidebar';
+import Header from './components/ui-custom/Header';
 
 function App() {
-  const navigate = useNavigate();
+  const { user, loading } = useUser();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user && window.location.pathname !== '/auth') {
-        navigate('/auth');
-      }
-    };
-    checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user && window.location.pathname !== '/auth') {
-        navigate('/auth');
-      } else if (session?.user && window.location.pathname === '/auth') {
-        navigate('/');
-      }
-    });
-
-    return () => {
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
-  }, [navigate]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-text">
+        Cargando usuario...
+      </div>
+    );
+  }
 
   return (
-    <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="people" element={<People />} />
-        <Route path="accounts" element={<Accounts />} />
-        <Route path="accounts/:id" element={<AccountDetails />} /> {/* New route for account details */}
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="income" element={<Income />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
+    <div className="flex min-h-screen bg-background">
+      {user && <Sidebar />}
+      <div className="flex-1 flex flex-col">
+        {user && <Header />}
+        <main className="flex-1">
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounts"
+              element={
+                <ProtectedRoute>
+                  <Accounts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/people"
+              element={
+                <ProtectedRoute>
+                  <People />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/collaborators"
+              element={
+                <ProtectedRoute>
+                  <Collaborators />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <Documents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/income" // New route for Income page
+              element={
+                <ProtectedRoute>
+                  <Income />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses" // New route for Expenses page
+              element={
+                <ProtectedRoute>
+                  <Expenses />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </main>
+      </div>
+      <Toaster richColors position="bottom-right" />
+    </div>
   );
 }
 

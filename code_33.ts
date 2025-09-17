@@ -1,1 +1,1 @@
-            balance -= gasto.amount; // Si el amount se guarda como positivo
+balance -= gasto.amount; // Si el amount se guarda como positivo
