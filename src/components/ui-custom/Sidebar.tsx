@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, ArrowUpCircle, ArrowDownCircle, Settings as SettingsIcon, Wallet } from 'lucide-react'; // Renamed Settings to SettingsIcon
+import { LayoutDashboard, Users, ArrowUpCircle, ArrowDownCircle, Settings as SettingsIcon, Wallet, FolderOpen } from 'lucide-react'; // Renamed Settings to SettingsIcon
 
 const navLinks = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
   { name: 'Socios Titulares', path: '/people', icon: Users },
+  { name: 'Documentos', path: '/partner-documents', icon: FolderOpen },
   { name: 'Ingresos', path: '/income', icon: ArrowUpCircle },
   { name: 'Gastos', path: '/expenses', icon: ArrowDownCircle },
   { name: 'Cuentas', path: '/accounts', icon: Wallet }, // Added Accounts

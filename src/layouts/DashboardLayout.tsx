@@ -13,8 +13,7 @@ import {
   UserCheck,
   Settings as SettingsIcon,
   Loader2,
-  FileText, // Added for Documents
-  Users, // Added for Collaborators
+  FolderOpen, // Import FolderOpen icon
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui-custom/ThemeToggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,8 +28,7 @@ const navItems = [
   { name: 'Ingresos', path: '/income', icon: ArrowUpCircle, roles: ['admin'] },
   { name: 'Gastos', path: '/expenses', icon: ArrowDownCircle, roles: ['admin'] },
   { name: 'Titulares', path: '/people', icon: UserCheck, roles: ['admin', 'engineer'] },
-  { name: 'Colaboradores', path: '/collaborators', icon: Users, roles: ['admin'] }, // Added Collaborators
-  { name: 'Documentos', path: '/documents', icon: FileText, roles: ['admin'] }, // Added Documents
+  { name: 'Documentos', path: '/partner-documents', icon: FolderOpen, roles: ['admin'] }, // Add Documents link for admins
   { name: 'Cuentas', path: '/accounts', icon: Wallet, roles: ['admin'] },
   { name: 'Configuración', path: '/settings', icon: SettingsIcon, roles: ['admin'] },
 ];
@@ -122,7 +120,7 @@ function DashboardLayout() {
           <ResizablePanel defaultSize={80} className="flex flex-col">
             <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 shadow-sm">
               <h1 className="text-2xl font-bold text-foreground animate-fade-in-up">
-                {navItems.find(item => item.path === location.pathname)?.name || 'Dashboard'}
+                {navItems.find(item => location.pathname.startsWith(item.path) && item.path !== '/')?.name || navItems.find(item => item.path === '/')?.name || 'Dashboard'}
               </h1>
               <div className="flex items-center gap-4">
                 <ThemeToggle />
