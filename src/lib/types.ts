@@ -6,10 +6,28 @@ export type Gasto = Tables<'gastos'>;
 export type Colaborador = Tables<'colaboradores'>;
 export type SocioTitular = Tables<'socio_titulares'>;
 
-// FIX: Added missing type definitions
-export type DocumentType = 'DNI' | 'Acta de Constitución' | 'Vigencia de Poder' | 'Otros';
-export type SocioDocumento = Tables<'socio_documentos'>;
+// FIX: Expanded DocumentType to include all required document names.
+export type DocumentType = 
+  | 'DNI' 
+  | 'Acta de Constitución' 
+  | 'Vigencia de Poder' 
+  | 'Ficha'
+  | 'Contrato'
+  | 'Planos de ubicación'
+  | 'Memoria descriptiva'
+  | 'Otros';
 
+// FIX: Augmented the base SocioDocumento type to include missing boolean fields.
+export type SocioDocumento = Tables<'socio_documentos'> & {
+  subido_manual?: boolean;
+  impreso?: boolean;
+  confirmado?: boolean;
+};
+
+// FIX: Added and exported the missing composite type for partners with their documents.
+export type SocioTitularWithDocuments = SocioTitular & {
+  socio_documentos: SocioDocumento[];
+};
 
 export type EconomicSituationOption = {
   value: 'Pobre' | 'Extremo Pobre';
