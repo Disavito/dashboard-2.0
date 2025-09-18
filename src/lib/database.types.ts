@@ -33,12 +33,12 @@ export interface Database {
           created_at: string
           account: string
           amount: number
-          transaction_type: string // 'Ingreso' | 'Anulacion' | 'Devolucion'
+          transaction_type: string
           receipt_number: string | null
           dni: string | null
           full_name: string | null
           numeroOperacion: string | null
-          date: string // ¡NUEVO! Añadido para la fecha de la transacción
+          date: string
         }
         Insert: {
           id?: number
@@ -50,7 +50,7 @@ export interface Database {
           dni?: string | null
           full_name?: string | null
           numeroOperacion?: string | null
-          date: string // ¡NUEVO!
+          date: string
         }
         Update: {
           id?: number
@@ -62,7 +62,7 @@ export interface Database {
           dni?: string | null
           full_name?: string | null
           numeroOperacion?: string | null
-          date?: string // ¡NUEVO!
+          date?: string
         }
         Relationships: []
       }
@@ -116,7 +116,7 @@ export interface Database {
           fechaNacimiento: string
           edad: number | null
           celular: string | null
-          situacionEconomica: string // 'Pobre' | 'Extremo Pobre'
+          situacionEconomica: string
           direccionDNI: string
           regionDNI: string
           provinciaDNI: string
@@ -211,7 +211,7 @@ export interface Database {
       }
       colaboradores: {
         Row: {
-          id: string // UUID
+          id: string
           created_at: string
           name: string
           apellidos: string
@@ -241,25 +241,74 @@ export interface Database {
       }
       profiles: {
         Row: {
-          id: string // UUID, references auth.users
-          created_at: string
-          role: string // 'Admin' | 'Engineer'
+          id: string
+          role: string | null
         }
         Insert: {
           id: string
-          created_at?: string
-          role: string
+          role?: string | null
         }
         Update: {
           id?: string
-          created_at?: string
-          role?: string
+          role?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_role_fkey"
+            columns: ["role"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["role_name"]
+          }
+        ]
+      }
+      roles: {
+        Row: {
+          id: number
+          role_name: string
+        }
+        Insert: {
+          id?: number
+          role_name: string
+        }
+        Update: {
+          id?: number
+          role_name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          user_id: string
+          role_id: number
+        }
+        Insert: {
+          user_id: string
+          role_id: number
+        }
+        Update: {
+          user_id?: string
+          role_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           }

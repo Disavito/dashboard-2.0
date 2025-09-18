@@ -12,7 +12,6 @@ import PartnerDocuments from './pages/PartnerDocuments';
 import { useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import ProtectedRoute from './components/auth/ProtectedRoute'; // Import the protected route component
 
 function App() {
   const navigate = useNavigate();
@@ -44,22 +43,21 @@ function App() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      {/*
+        The ProtectedRoute component has been removed.
+        All routes are now accessible to all authenticated users.
+        Data visibility within each page is controlled by Supabase Row Level Security (RLS),
+        which is a more secure and robust approach.
+      */}
       <Route path="/" element={<DashboardLayout />}>
-        {/* Routes for admin and engineer */}
-        <Route element={<ProtectedRoute allowedRoles={['admin', 'engineer']} />}>
-          <Route index element={<Dashboard />} />
-          <Route path="people" element={<People />} />
-        </Route>
-
-        {/* Routes for admin only */}
-        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route path="partner-documents" element={<PartnerDocuments />} />
-          <Route path="accounts" element={<Accounts />} />
-          <Route path="accounts/:id" element={<AccountDetails />} />
-          <Route path="expenses" element={<Expenses />} />
-          <Route path="income" element={<Income />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+        <Route index element={<Dashboard />} />
+        <Route path="people" element={<People />} />
+        <Route path="partner-documents" element={<PartnerDocuments />} />
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="accounts/:id" element={<AccountDetails />} />
+        <Route path="expenses" element={<Expenses />} />
+        <Route path="income" element={<Income />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );

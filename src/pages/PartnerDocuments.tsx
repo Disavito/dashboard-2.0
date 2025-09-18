@@ -3,17 +3,19 @@ import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui-custom/DataTable';
-import { Loader2, Link as LinkIcon, FolderSearch, Search } from 'lucide-react';
+import { Loader2, Link as LinkIcon, FolderSearch, Search, Upload, FileWarning } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { UploadDocumentModal } from '@/components/custom/UploadDocumentModal';
 
 // Define the structure of a document and a partner with their documents
 interface SocioDocumento {
   id: number;
   tipo_documento: string;
-  link_documento: string;
+  link_documento: string | null; // Can be null
 }
 
 interface IngresoInfo {
@@ -32,6 +34,8 @@ interface SocioConDocumentos {
   paymentInfo: IngresoInfo;
 }
 
+type DocumentoRequerido = 'Planos de ubicación' | 'Memoria descriptiva';
+
 function PartnerDocuments() {
   const [sociosConDocumentos, setSociosConDocumentos] = useState<SocioConDocumentos[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +43,17 @@ function PartnerDocuments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocalidad, setSelectedLocalidad] = useState('all');
   const [localidades, setLocalidades] = useState<string[]>([]);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    socioId: number | null;
+    socioName: string;
+    documentType: DocumentoRequerido | null;
+  }>({
+    isOpen: false,
+    socioId: null,
+    socioName: '',
+    documentType: null,
+  });
 
   const allowedDocumentTypes = useMemo(() => [
     "Planos de ubicación",
@@ -47,10 +62,14 @@ function PartnerDocuments() {
     "Contrato"
   ], []);
 
+  const requiredDocumentTypes: DocumentoRequerido[] = useMemo(() => [
+    "Planos de ubicación",
+    "Memoria descriptiva"
+  ], []);
+
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch partners, documents, localities, and income records concurrently
       const [sociosRes, localidadesRes, ingresosRes] = await Promise.all([
         supabase
           .from('socio_titulares')
@@ -67,11 +86,9 @@ function PartnerDocuments() {
       if (localidadesRes.error) throw localidadesRes.error;
       if (ingresosRes.error) throw ingresosRes.error;
 
-      // Process localities
       const uniqueLocalidades = [...new Set(localidadesRes.data.map(item => item.localidad).filter(Boolean) as string[])];
       setLocalidades(uniqueLocalidades.sort());
 
-      // Process income data into a lookup map for quick access
       const ingresosMap = new Map<string, { receipt_number: string | null }>();
       ingresosRes.data.forEach(ingreso => {
         if (ingreso.dni) {
@@ -79,7 +96,6 @@ function PartnerDocuments() {
         }
       });
 
-      // Process and merge partner data with payment info
       const processedData = sociosRes.data.map(socio => {
         const paymentRecord = ingresosMap.get(socio.dni);
         const paymentInfo: IngresoInfo = {
@@ -112,30 +128,26 @@ function PartnerDocuments() {
     fetchAllData();
   }, [fetchAllData]);
 
+  const handleOpenModal = (socio: SocioConDocumentos, documentType: DocumentoRequerido) => {
+    const fullName = `${socio.nombres || ''} ${socio.apellidoPaterno || ''}`.trim();
+    setModalState({
+      isOpen: true,
+      socioId: socio.id,
+      socioName: fullName,
+      documentType: documentType,
+    });
+  };
+
   const filteredData = useMemo(() => {
     return sociosConDocumentos.filter(socio => {
       const searchLower = searchQuery.toLowerCase().trim();
-      
-      // Safely construct the full name and get DNI, handling potential null values
       const fullName = (`${socio.nombres || ''} ${socio.apellidoPaterno || ''} ${socio.apellidoMaterno || ''}`).toLowerCase().trim();
       const dni = (socio.dni || '').toLowerCase();
-
       const matchesLocalidad = selectedLocalidad === 'all' || socio.localidad === selectedLocalidad;
-      
-      // If no search query, only filter by locality
-      if (!searchLower) {
-        return matchesLocalidad;
-      }
-
-      // Split search query into individual terms
+      if (!searchLower) return matchesLocalidad;
       const searchTerms = searchLower.split(' ').filter(term => term.length > 0);
-
-      // Check if DNI contains the full search query (for partial DNI search)
       const matchesDni = dni.includes(searchLower);
-
-      // Check if the full name contains ALL of the search terms
       const matchesName = searchTerms.every(term => fullName.includes(term));
-
       return matchesLocalidad && (matchesDni || matchesName);
     });
   }, [sociosConDocumentos, searchQuery, selectedLocalidad]);
@@ -178,15 +190,17 @@ function PartnerDocuments() {
         header: 'Documentos',
         cell: ({ row }) => {
           const { socio_documentos } = row.original;
-          if (!socio_documentos || socio_documentos.length === 0) {
+          const validDocuments = socio_documentos.filter(doc => doc.link_documento);
+
+          if (validDocuments.length === 0) {
             return <span className="text-textSecondary/70 italic text-sm">Sin documentos</span>;
           }
           return (
             <div className="flex flex-col space-y-2 items-start">
-              {socio_documentos.map((doc) => (
+              {validDocuments.map((doc) => (
                 <a
                   key={doc.id}
-                  href={doc.link_documento}
+                  href={doc.link_documento!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-primary hover:text-accent transition-colors duration-200 text-sm font-medium group"
@@ -199,18 +213,69 @@ function PartnerDocuments() {
           );
         },
       },
+      {
+        id: 'acciones',
+        header: 'Subir Faltantes',
+        cell: ({ row }) => {
+          const socio = row.original;
+          const missingDocs = requiredDocumentTypes.filter(docType => {
+            const doc = socio.socio_documentos.find(d => d.tipo_documento === docType);
+            return !doc || !doc.link_documento;
+          });
+
+          if (missingDocs.length === 0) {
+            return <span className="text-sm text-success italic">Completo</span>;
+          }
+
+          return (
+            <div className="flex flex-col items-start gap-2">
+              {missingDocs.map(docType => (
+                <Button
+                  key={docType}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-auto py-1 px-2"
+                  onClick={() => handleOpenModal(socio, docType)}
+                >
+                  <Upload className="mr-2 h-3 w-3" />
+                  Subir {docType === 'Planos de ubicación' ? 'Planos' : 'Memoria'}
+                </Button>
+              ))}
+            </div>
+          );
+        },
+      },
     ],
-    []
+    [requiredDocumentTypes]
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background text-text font-sans flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Cargando documentos de socios...</p>
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-3 text-lg">Cargando socios...</p>
+        </div>
+      );
+    }
+
+    if (filteredData.length === 0) {
+      return (
+        <div className="text-center py-16 px-6 bg-surface/50 rounded-lg border-2 border-dashed border-border">
+          <FileWarning className="mx-auto h-12 w-12 text-textSecondary" />
+          <h3 className="mt-4 text-xl font-semibold text-text">No se encontraron socios</h3>
+          <p className="mt-2 text-sm text-textSecondary">
+            Prueba a cambiar los filtros de búsqueda o de localidad.
+          </p>
+          <p className="mt-1 text-xs text-textSecondary/70">
+            (Si esperabas ver datos, verifica que tu rol tenga permisos para acceder a los titulares).
+          </p>
+        </div>
+      );
+    }
+
+    return <DataTable columns={columns} data={filteredData} />;
+  };
 
   if (error) {
     return (
@@ -272,10 +337,25 @@ function PartnerDocuments() {
                 </SelectContent>
               </Select>
             </div>
-            <DataTable columns={columns} data={filteredData} />
+            {renderContent()}
           </CardContent>
         </Card>
       </div>
+      <UploadDocumentModal
+        isOpen={modalState.isOpen}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setModalState({ isOpen: false, socioId: null, socioName: '', documentType: null });
+          }
+        }}
+        socioId={modalState.socioId}
+        socioName={modalState.socioName}
+        documentType={modalState.documentType}
+        onUploadSuccess={() => {
+          toast.info('Actualizando la tabla de documentos...');
+          fetchAllData(); // Re-fetch data to show the new document
+        }}
+      />
     </div>
   );
 }

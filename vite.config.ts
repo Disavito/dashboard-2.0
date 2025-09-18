@@ -19,6 +19,6 @@ export default defineConfig({
   },
 	preview: {
     host: true,
-    allowedHosts: ['n8n-dashboard.mv7mvl.easypanel.host']
+    allowedHosts: ['n8n-dashboard1.mv7mvl.easypanel.host']
   }
 });

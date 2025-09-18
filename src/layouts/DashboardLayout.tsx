@@ -13,7 +13,7 @@ import {
   UserCheck,
   Settings as SettingsIcon,
   Loader2,
-  FolderOpen, // Import FolderOpen icon
+  FolderOpen,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui-custom/ThemeToggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,23 +21,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/lib/supabaseClient'; // Import supabase client
+import { supabase } from '@/lib/supabaseClient';
 
 const navItems = [
-  { name: 'Resumen', path: '/', icon: LayoutDashboard, roles: ['admin', 'engineer'] },
-  { name: 'Ingresos', path: '/income', icon: ArrowUpCircle, roles: ['admin'] },
-  { name: 'Gastos', path: '/expenses', icon: ArrowDownCircle, roles: ['admin'] },
-  { name: 'Titulares', path: '/people', icon: UserCheck, roles: ['admin', 'engineer'] },
-  { name: 'Documentos', path: '/partner-documents', icon: FolderOpen, roles: ['admin'] }, // Add Documents link for admins
-  { name: 'Cuentas', path: '/accounts', icon: Wallet, roles: ['admin'] },
-  { name: 'Configuración', path: '/settings', icon: SettingsIcon, roles: ['admin'] },
+  { name: 'Resumen', path: '/', icon: LayoutDashboard },
+  { name: 'Ingresos', path: '/income', icon: ArrowUpCircle },
+  { name: 'Gastos', path: '/expenses', icon: ArrowDownCircle },
+  { name: 'Titulares', path: '/people', icon: UserCheck },
+  { name: 'Documentos', path: '/partner-documents', icon: FolderOpen },
+  { name: 'Cuentas', path: '/accounts', icon: Wallet },
+  { name: 'Configuración', path: '/settings', icon: SettingsIcon },
 ];
 
 function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, role, loading } = useUser();
+  const { user, roles, loading } = useUser();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -57,8 +57,6 @@ function DashboardLayout() {
   if (!user) {
     return null;
   }
-
-  const filteredNavItems = navItems.filter(item => item.roles.includes(role || ''));
 
   return (
     <TooltipProvider>
@@ -84,7 +82,7 @@ function DashboardLayout() {
             </div>
             <ScrollArea className="flex-1 py-4">
               <nav className="grid items-start gap-2 px-4">
-                {filteredNavItems.map((item) => (
+                {navItems.map((item) => (
                   <Tooltip key={item.name} delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Link
@@ -139,8 +137,8 @@ function DashboardLayout() {
                         <p className="text-sm font-medium leading-none">
                           {user?.email || 'Usuario'}
                         </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          Rol: {role || 'N/A'}
+                        <p className="text-xs leading-none text-muted-foreground capitalize">
+                          Roles: {roles?.join(', ') || 'N/A'}
                         </p>
                       </div>
                     </DropdownMenuLabel>
