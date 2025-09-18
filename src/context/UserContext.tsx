@@ -6,6 +6,7 @@ interface UserContextType {
   user: User | null;
   roles: string[] | null;
   loading: boolean;
+  signOut: () => Promise<void>; // FIX: Added signOut function
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -30,8 +31,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Error fetching user roles:', error);
         setRoles([]);
       } else if (data) {
-        // FIX: Supabase returns the joined 'roles' as an array.
-        // We need to access the first element of that array to get the role object.
         const roleNames = data
           .map(item => item.roles?.[0]?.role_name)
           .filter((roleName): roleName is string => !!roleName);
@@ -66,8 +65,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  // FIX: Added signOut function implementation
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    // onAuthStateChange will handle setting user to null
+  };
+
   return (
-    <UserContext.Provider value={{ user, roles, loading }}>
+    <UserContext.Provider value={{ user, roles, loading, signOut }}>
       {children}
     </UserContext.Provider>
   );

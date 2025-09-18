@@ -1,11 +1,15 @@
-import { Tables } from './database.types'; // Removed Database
+import { Tables } from './database.types';
 
 export type Cuenta = Tables<'cuentas'>;
 export type Ingreso = Tables<'ingresos'>;
 export type Gasto = Tables<'gastos'>;
 export type Colaborador = Tables<'colaboradores'>;
-
 export type SocioTitular = Tables<'socio_titulares'>;
+
+// FIX: Added missing type definitions
+export type DocumentType = 'DNI' | 'Acta de Constitución' | 'Vigencia de Poder' | 'Otros';
+export type SocioDocumento = Tables<'socio_documentos'>;
+
 
 export type EconomicSituationOption = {
   value: 'Pobre' | 'Extremo Pobre';

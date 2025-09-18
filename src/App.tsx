@@ -44,10 +44,10 @@ function App() {
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       {/*
-        The ProtectedRoute component has been removed.
-        All routes are now accessible to all authenticated users.
-        Data visibility within each page is controlled by Supabase Row Level Security (RLS),
-        which is a more secure and robust approach.
+        CONFIRMACIÓN: El componente ProtectedRoute ha sido eliminado.
+        Todas las rutas ahora son accesibles para cualquier usuario autenticado.
+        La visibilidad de los datos dentro de cada página se controla mediante
+        Row Level Security (RLS) de Supabase, que es un enfoque más seguro y robusto.
       */}
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
